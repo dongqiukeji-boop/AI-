@@ -1,6 +1,6 @@
 import os, time, hmac, hashlib, base64, urllib.parse, requests
 
-# 1. 获取 Secrets
+# 获取 Secrets
 GEMINI_KEY = os.getenv('GEMINI_API_KEY')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 DING_SECRET = os.getenv('DING_SECRET')
@@ -15,34 +15,27 @@ def get_signed_url():
 
 def main():
     try:
-        # 使用 Google 官方目前最通用的 v1 路径
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_KEY}"
+        # 使用 v1 正式版接口，这是目前兼容性最强的路径
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
         
         headers = {'Content-Type': 'application/json'}
-        data = {
-            "contents": [{
-                "parts": [{"text": "请以'AI日报'为开头，总结一句话：今日AI技术有突破性进展。"}]
-            }]
-        }
+        data = {"contents": [{"parts": [{"text": "请以'AI日报'为开头，写一句今日AI技术的简短鼓励语。"}]}]}
         
         response = requests.post(url, headers=headers, json=data, timeout=30)
         res_json = response.json()
         
-        # 精准匹配 Google API 返回的结构
+        # 成功解析内容
         if 'candidates' in res_json and res_json['candidates']:
             summary = res_json['candidates'][0]['content']['parts'][0]['text']
-        elif 'error' in res_json:
-            summary = f"Google 官方报错：{res_json['error'].get('message', '未知错误')}"
         else:
-            summary = f"接口返回异常，详细信息：{str(res_json)[:100]}"
+            # 如果出错，抓取具体报错原因
+            error_info = res_json.get('error', {}).get('message', '未知错误')
+            summary = f"状态提示：{error_info}"
 
         # 推送到钉钉
         payload = {
             "msgtype": "markdown",
-            "markdown": {
-                "title": "AI日报", 
-                "text": f"# AI日报 \n\n {summary} \n\n > 推送时间：{time.strftime('%H:%M:%S')}"
-            }
+            "markdown": {"title": "AI日报", "text": f"# AI日报 \n\n {summary}"}
         }
         requests.post(get_signed_url(), json=payload)
         
