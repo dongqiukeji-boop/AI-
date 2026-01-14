@@ -15,32 +15,32 @@ def get_signed_url():
 
 def main():
     try:
-        # 使用 v1 正式版接口，这是目前兼容性最强的路径
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+        # 使用最高兼容性的 gemini-pro 接口
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_KEY}"
         
         headers = {'Content-Type': 'application/json'}
-        data = {"contents": [{"parts": [{"text": "请以'AI日报'为开头，写一句今日AI技术的简短鼓励语。"}]}]}
+        data = {"contents": [{"parts": [{"text": "请以'AI日报'为开头，写一句激励人心的话，证明你已经连接成功了。"}]}]}
         
         response = requests.post(url, headers=headers, json=data, timeout=30)
         res_json = response.json()
         
-        # 成功解析内容
-        if 'candidates' in res_json and res_json['candidates']:
+        # 解析返回内容
+        if 'candidates' in res_json and len(res_json['candidates']) > 0:
             summary = res_json['candidates'][0]['content']['parts'][0]['text']
+        elif 'error' in res_json:
+            summary = f"Google 错误反馈：{res_json['error'].get('message', '未知模型权限问题')}"
         else:
-            # 如果出错，抓取具体报错原因
-            error_info = res_json.get('error', {}).get('message', '未知错误')
-            summary = f"状态提示：{error_info}"
+            summary = "AI 返回了空数据，请尝试重新生成 API Key。"
 
         # 推送到钉钉
         payload = {
             "msgtype": "markdown",
-            "markdown": {"title": "AI日报", "text": f"# AI日报 \n\n {summary}"}
+            "markdown": {"title": "AI日报", "text": f"# AI日报 \n\n {summary} \n\n > 推送时间：{time.strftime('%H:%M:%S')}"}
         }
         requests.post(get_signed_url(), json=payload)
         
     except Exception as e:
-        print(f"执行出错: {e}")
+        print(f"运行出错: {e}")
 
 if __name__ == "__main__":
     main()
