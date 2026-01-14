@@ -25,7 +25,7 @@ def main():
     try:
         # --- 3. 使用最简单的 API 方式调用 Gemini ---
         # 这种方式不依赖特定的 API 版本，兼容性最强
-        gemini_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
         
         headers = {'Content-Type': 'application/json'}
         prompt = "你是一个专业的新闻助手。请以'AI日报'为标题，用一句话总结：今日AI领域技术更新飞速，多模态应用正在改变各行各业。"
