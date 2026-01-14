@@ -15,23 +15,23 @@ def get_signed_url():
 
 def main():
     try:
-        # --- 核心：官方标准接口 ---
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+        # --- 使用官方 v1 正式版接口 ---
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
         
         headers = {'Content-Type': 'application/json'}
-        data = {"contents": [{"parts": [{"text": "请以'AI日报'为开头，总结一句话：今天AI技术发展非常迅猛。"}]}]}
+        data = {"contents": [{"parts": [{"text": "请以'AI日报'为开头，总结一句话：今日AI技术有重要突破。"}]}]}
         
-        # 发送请求，增加超时保护
+        # 发送请求
         response = requests.post(url, headers=headers, json=data, timeout=30)
         res_json = response.json()
         
-        # 稳健的解析逻辑
+        # 稳健解析逻辑
         if 'candidates' in res_json and len(res_json['candidates']) > 0:
             summary = res_json['candidates'][0]['content']['parts'][0]['text']
         elif 'error' in res_json:
-            summary = f"Google 接口反馈：{res_json['error'].get('message', '未知地区限制')}"
+            summary = f"Google 接口反馈：{res_json['error'].get('message', '权限或路径错误')}"
         else:
-            summary = "AI 暂时没有返回有效内容，请检查 API Key 状态。"
+            summary = "AI 获取异常，请检查 API Key 权限。"
 
         # 推送到钉钉
         payload = {
@@ -39,7 +39,7 @@ def main():
             "markdown": {"title": "AI日报", "text": f"# AI日报 \n\n {summary} \n\n > 推送时间：{time.strftime('%H:%M:%S')}"}
         }
         requests.post(get_signed_url(), json=payload)
-        print("任务完成，请查看钉钉消息")
+        print("任务已完成，请检查钉钉")
         
     except Exception as e:
         print(f"程序运行出错: {e}")
