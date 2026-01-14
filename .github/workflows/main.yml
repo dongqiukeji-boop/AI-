@@ -2,20 +2,30 @@ name: AI新闻每日推送
 
 on:
   schedule:
-    - cron: '0 1 * * *' # 北京时间 9:00
-  workflow_dispatch: 
+    - cron: '0 1 * * *' # 北京时间 9:00（GitHub Actions cron 默认 UTC）
+  workflow_dispatch:
+
+concurrency:
+  group: ai-news-daily
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: 安装 Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+
       - name: 安装依赖
-        run: pip install requests google-generativeai
+        run: |
+          pip install --upgrade pip
+          pip install requests
+          # 如果你的 main.py 没用到 google-generativeai，就别装它（少一个依赖，少一层不确定性）
+
       - name: 运行程序
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
