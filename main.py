@@ -17,7 +17,7 @@ def get_signed_url():
 def main():
     try:
         # --- 3. 官方接口 (使用最稳定的 v1beta 路径) ---
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
         
         headers = {'Content-Type': 'application/json'}
         # 简化 Prompt，确保能快速返回
