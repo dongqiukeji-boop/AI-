@@ -16,7 +16,7 @@ def get_signed_url():
 def main():
     try:
         # --- 使用官方 v1 正式版接口 ---
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_KEY}"
         
         headers = {'Content-Type': 'application/json'}
         data = {"contents": [{"parts": [{"text": "请以'AI日报'为开头，总结一句话：今日AI技术有重要突破。"}]}]}
