@@ -1,32 +1,55 @@
-name: AI新闻每日推送
+import os
+import time
+import hmac
+import hashlib
+import base64
+import urllib.parse
+import requests
+import google.generativeai as genai
 
-on:
-  schedule:
-    # 每天北京时间 9:00 运行 (UTC 1:00)
-    - cron: '0 1 * * *'
-  workflow_dispatch: # 允许手动点击运行
+# --- 1. 自动对接 GitHub 保险箱 (Secrets) ---
+GEMINI_KEY = os.getenv('GEMINI_API_KEY')
+WEBHOOK_URL = os.getenv('WEBHOOK_URL')     # 对应 main.yml 里的 WEBHOOK_URL
+DING_SECRET = os.getenv('DING_SECRET')     # 对应 main.yml 里的 DING_SECRET
+IMGBB_KEY = os.getenv('IMGBB_KEY')
+PROXY_URL = os.getenv('PROXY_URL')
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v3
+# --- 2. 钉钉安全验证逻辑 (必须有，否则发不出) ---
+def get_signed_url():
+    timestamp = str(round(time.time() * 1000))
+    secret_enc = DING_SECRET.encode('utf-8')
+    string_to_sign = '{}\n{}'.format(timestamp, DING_SECRET)
+    string_to_sign_enc = string_to_sign.encode('utf-8')
+    hmac_code = hmac.new(secret_enc, string_to_sign_enc, digestmod=hashlib.sha256).digest()
+    sign = urllib.parse.quote(base64.b64encode(hmac_code))
+    return f"{WEBHOOK_URL}&timestamp={timestamp}&sign={sign}"
 
-      - name: 安装 Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+# --- 3. 配置 Gemini AI ---
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel('gemini-pro')
 
-      - name: 安装依赖
-        run: pip install requests google-generativeai
+def main():
+    try:
+        # 这里放你原本抓取新闻的逻辑，下面是模拟一个总结
+        news_content = "这里是你抓取到的原始新闻内容..." 
+        
+        # 调用 AI 总结
+        response = model.generate_content(f"请简要总结以下新闻：{news_content}")
+        summary = response.text
+        
+        # 发送到钉钉
+        payload = {
+            "msgtype": "markdown",
+            "markdown": {
+                "title": "AI 每日新闻总结",
+                "text": f"### 每日 AI 新闻总结 \n\n {summary}"
+            }
+        }
+        res = requests.post(get_signed_url(), json=payload)
+        print(f"发送状态: {res.text}")
+        
+    except Exception as e:
+        print(f"运行出错: {e}")
 
-      - name: 运行程序
-        env:
-          # 把你在 GitHub Secrets 存的名字映射给程序
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_DIZHI }}
-          DING_SECRET: ${{ secrets.JIAQIAN_DINGDING }}
-          IMGBB_KEY: ${{ secrets.IMGBB_API }}
-          PROXY_URL: ${{ secrets.KUAYU_DAILI }}
-        run: python main.py # ⚠️ 请确认你的 Python 文件名是否为 main.py
+if __name__ == "__main__":
+    main()
